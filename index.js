@@ -32,8 +32,8 @@ app.use("/api/apartments" , apartmentRoutes)
 app.use("/api/agreements" , agreementRoutes)
 app.use("/api/announcements" , announcementRoutes)
 
-// server
 
+// server and database
 const PORT = process.env.PORT || 8000
 
 const runServer = async ()=>{
