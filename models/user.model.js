@@ -1,12 +1,28 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, unique: true },
-  password : String,
-  photo: String,
-  role: { type: String, enum: ['user', 'member', 'admin'], default: 'user' },
-  createdAt: { type: Date, default: Date.now }
+  fullName : {
+    type : String ,
+    required: true
+  },
+  email: {
+     type: String,
+      unique: true 
+    },
+  password :{
+    type : String ,
+    required : true
+  },
+  profilePicture : {
+    type : String ,
+    required : true
+  },
+  role: {
+     type: String,
+      enum: ['user', 'member', 'admin'],
+       default: 'user'
+     }
+     
 } , {timestamps: true});
 
  export const User = mongoose.model('User', userSchema);

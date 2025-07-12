@@ -1,13 +1,23 @@
-import mongoose from "mongoose";
+import mongoose, { Mongoose } from "mongoose";
 
 const agreementSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  floor: { type: Number, required: true },
-  block: { type: String, required: true },
-  apartmentNo: { type: String, required: true },
-  rent: { type: Number, required: true },
-  status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" },
-  appliedAt: { type: Date, default: Date.now },
-}, { timestamps: true });
+    apartmentFor : {
+        type : mongoose.Schema.Types.ObjectId ,
+        ref: "Apartment"
+    } ,
+    requestedBy : {
+          type : mongoose.Schema.Types.ObjectId ,
+        ref: "User"
+    } ,
+    contactNo: {
+        type: Number ,
+        required : true
+    },
+    status: {
+       type: String,
+       enum: ["pending", "accepted", "rejected"],
+       default: "pending"
+  },
+} , {timestamps: true})
 
-export const Agreement = mongoose.model("Agreement", agreementSchema);
+export const Agreement = mongoose.model("Agreement" , agreementSchema)

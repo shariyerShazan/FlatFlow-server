@@ -23,9 +23,14 @@ export const isMember = async (req, res, next) => {
         message: "Forbidden: Only member allowed",
         success: false,
       });
-    }
+    } 
     next();
   } catch (err) {
     res.status(500).json({ message: "Server error", success: false });
   }
 };
+
+
+
+
+
