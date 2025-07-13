@@ -9,6 +9,8 @@ import apartmentRoutes from "./routes/apartment.route.js"
 import { connectDB } from "./utils/db.js"
 import agreementRoutes from "./routes/agreement.route.js"
  import announcementRoutes from "./routes/announcement.route.js"
+import paymentRoutes from "./routes/payment.route.js"
+import cuponRoutes from "./routes/coupon.route.js"
 
 // middlewares
 app.use(cookieParser())
@@ -31,6 +33,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/apartments" , apartmentRoutes)
 app.use("/api/agreements" , agreementRoutes)
 app.use("/api/announcements" , announcementRoutes)
+app.use("/api/payments" , paymentRoutes)
+app.use("/api/coupons" , cuponRoutes)
 
 
 // server and database
