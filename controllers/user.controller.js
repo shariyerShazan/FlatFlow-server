@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { getDataUri } from "../utils/dataUri.js";
 import cloudinary from "../utils/cloudinary.js";
 import dotenv from "dotenv"
+import { Apartment } from "../models/apartment.model.js";
 dotenv.config()
 
 export const register = async (req, res) => {
@@ -32,12 +33,19 @@ export const register = async (req, res) => {
           message: "Password must be at least 6 characters long.",
         });
       }
-      if (!/[a-zA-Z]/.test(password)) {
+      if (!/[a-z]/.test(password)) {
         return res.status(400).json({
           success: false,
-          message: "Password must contain at least one letter",
+          message: "Password must contain at least one lower letter",
         });
       }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must contain at least one upper letter",
+        });
+      }
+
       if (!/\d/.test(password)) {
         return res.status(400).json({
           success: false,
@@ -82,8 +90,7 @@ export const login = async (req, res) => {
        })
     }
     const user = await User.findOne({ email });
-    const totalUser = await User.countDocuments({ role: "user" });
-    const totalMember = await User.countDocuments({ role: "member" });
+    
 
     if (!user){
        return res.status(401).json({
@@ -113,8 +120,6 @@ export const login = async (req, res) => {
         secure: process.env.NODE_ENV === "production",
       }).json({
       message: "Login successful",
-      totalUser,
-      totalMember,
       user , 
       success: true
     });
@@ -156,3 +161,37 @@ export const logout = async (req, res) => {
 //     res.status(500).json({ message: "Failed to get profile", success: false });
 //   }
 // };
+
+
+
+export const getDatas = async (req, res) => {
+  try {
+    const totalUser = await User.countDocuments({ role: "user" });
+    const totalMember = await User.countDocuments({ role: "member" });
+    const totalApartment = await Apartment.countDocuments();
+    const availableApartment = await Apartment.countDocuments({ available: true });
+    const agreementedApartment = await Apartment.countDocuments({ available: false });
+
+    const PercentageOfAvailable = totalApartment > 0 
+      ? (availableApartment / totalApartment) * 100 
+      : 0;
+
+    const PercentageOfAgreemented = totalApartment > 0 
+      ? (agreementedApartment / totalApartment) * 100 
+      : 0;
+
+    return res.status(200).json({
+      success: true,
+      totalUser,
+      totalMember,
+      totalApartment,
+      availableApartment,
+      agreementedApartment,
+      PercentageOfAvailable: PercentageOfAvailable.toFixed(2),
+      PercentageOfAgreemented: PercentageOfAgreemented.toFixed(2)
+    });
+  } catch (error) {
+    console.error("getDatas error:", error);
+    res.status(500).json({ message: "Failed", success: false });
+  }
+};

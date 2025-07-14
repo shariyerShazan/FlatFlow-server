@@ -7,108 +7,127 @@ import { Coupon } from "../models/coupon.mode.js";
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 export const createPaymentIntent = async (req, res) => {
+  try {
+    const { apartmentId, rent, month, coupon } = req.body;
+    const userId = req.userId;
+
+    if (!apartmentId || !rent || !month) {
+      return res.status(400).json({
+        message: "Missing required fields (apartmentId, rent, month)",
+        success: false,
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== "member") {
+      return res.status(403).json({
+        message: "You are not eligible for payment",
+        success: false,
+      });
+    }
+
+    const agreement = await Agreement.findOne({
+      apartmentFor: apartmentId,
+      requestedBy: userId,
+    });
+
+    if (!agreement || agreement.status !== "accepted") {
+      return res.status(403).json({
+        message: "You are not eligible to pay for this apartment",
+        success: false,
+      });
+    }
+
+    // Check if already paid for this apartment + month
+    const existingPayment = await Payment.findOne({
+      agreementFor: apartmentId,
+      paymentedBy: userId,
+      month: month,
+    });
+
+    if (existingPayment) {
+      return res.status(400).json({
+        message: `You already paid rent for ${month}`,
+        success: false,
+      });
+    }
+
+    let finalAmount = rent;
+    let discountPercent = 0;
+    let foundCoupon = null;
+
+    if (coupon) {
+      foundCoupon = await Coupon.findOne({ code: coupon.toUpperCase() });
+
+      if (foundCoupon) {
+        const now = new Date();
+        if (foundCoupon.expiresAt > now) {
+          discountPercent = foundCoupon.discountPercentage;
+          const discount = (discountPercent / 100) * rent;
+          finalAmount = rent - discount;
+          if (finalAmount < 0) finalAmount = 0;
+        } else {
+          return res.status(400).json({
+            message: "Coupon expired",
+            success: false,
+          });
+        }
+      } else {
+        return res.status(400).json({
+          message: "Invalid coupon code",
+          success: false,
+        });
+      }
+    }
+
+    // Create Stripe Payment Intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(finalAmount * 100),
+      currency: "usd",
+      payment_method_types: ["card"],
+    });
+
+    res.status(200).json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      amount: finalAmount,
+      discountPercent: discountPercent,
+    });
+
+  } catch (error) {
+    console.error("Payment Intent Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong while creating payment intent",
+    });
+  }
+};
+
+
+
+export const savePaymentInfo = async (req, res) => {
     try {
-      const { apartmentId, rent, month, coupon } = req.body;
+      const { apartmentId, rent , month , coupon , discountPay} = req.body;
       const userId = req.userId;
-  
+
       if (!apartmentId || !rent || !month) {
         return res.status(400).json({
           message: "Missing required fields (apartmentId, rent, month)",
           success: false,
         });
       }
-  
-      const user = await User.findById(userId);
-      if (!user || user.role !== "member") {
-        return res.status(403).json({
-          message: "You are not eligible for payment",
-          success: false,
-        });
-      }
-  
-      const agreement = await Agreement.findOne({
-        apartmentFor: apartmentId,
-        requestedBy: userId,
-      });
-  
-      if (!agreement || agreement.status !== "accepted") {
-        return res.status(403).json({
-          message: "You are not eligible to pay for this apartment",
-          success: false,
-        });
-      }
-  
-      // Check if already paid for this apartment + month
-      const existingPayment = await Payment.findOne({
-        agreementFor: apartmentId,
-        paymentedBy: userId,
-        month: month,
-      });
-  
-      if (existingPayment) {
-        return res.status(400).json({
-          message: `You already paid rent for ${month}`,
-          success: false,
-        });
-      }
-  
-      let finalAmount = rent; 
-      if (coupon) {
-        const foundCoupon = await Coupon.findOne({ code: coupon.toUpperCase() });
-  
-        if (foundCoupon) {
-          const now = new Date();
-          if (foundCoupon.expiresAt > now) {
-            const discount = (foundCoupon.discountPercentage / 100) * rent;
-            finalAmount = rent - discount;
-            if (finalAmount < 0) finalAmount = 0; 
-          } else {
-            return res.status(400).json({
-              message: "Coupon expired",
-              success: false,
-            });
-          }
-        } else {
-          return res.status(400).json({
-            message: "Invalid coupon code",
-            success: false,
-          });
-        }
-      }
-  
-      // Create Stripe Payment Intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(finalAmount * 100), 
-        currency: "usd",
-        payment_method_types: ["card"],
-      });
-  
-      res.status(200).json({
-        success: true,
-        clientSecret: paymentIntent.client_secret,
-      });
-    } catch (error) {
-      console.error("Payment Intent Error:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Something went wrong while creating payment intent",
-      });
-    }
-  };
-  
+      const couponF = coupon ? await Coupon.findOne({ code: coupon }) : null;
 
-export const savePaymentInfo = async (req, res) => {
-    try {
-      const { apartmentId, rent } = req.body;
-      const userId = req.userId;
-  
       const saved = await Payment.create({
         agreementFor: apartmentId,
         paymentAmount: rent,
         paymentedBy: userId,
+        month,
+        discountPay,
+        coupon: couponF ? couponF._id : null,
       });
+
   
       res.status(201).json({
         success: true,
@@ -131,6 +150,7 @@ export const getMemberPayment = async (req, res) => {
       const userId = req.userId;
       const paymentHistory = await Payment.find({ paymentedBy: userId })
         .populate("agreementFor")
+        .populate("coupon")
         .sort({ createdAt: -1 });
   
       if (paymentHistory.length === 0) {
@@ -159,6 +179,7 @@ export const getAllPayment = async (req, res) => {
     try {
       const paymentHistory = await Payment.find()
         .populate("paymentedBy", "fullName email")
+        .populate("coupon")
         .populate("agreementFor")
         .sort({ createdAt: -1 });
   

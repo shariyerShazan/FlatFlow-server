@@ -16,6 +16,13 @@ const paymentSchema = new mongoose.Schema(
         ref: "User",
         required: true,
       },
+      discountPay : {
+        type : Number ,
+      },
+      coupon: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Coupon",
+      },
       month: {
         type: String,
         required: true,
