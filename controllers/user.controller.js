@@ -5,6 +5,7 @@ import { getDataUri } from "../utils/dataUri.js";
 import cloudinary from "../utils/cloudinary.js";
 import dotenv from "dotenv"
 import { Apartment } from "../models/apartment.model.js";
+import { Agreement } from "../models/agreement.model.js";
 dotenv.config()
 
 export const register = async (req, res) => {
@@ -192,6 +193,72 @@ export const getDatas = async (req, res) => {
     });
   } catch (error) {
     console.error("getDatas error:", error);
+    res.status(500).json({ message: "Failed", success: false });
+  }
+};
+
+
+
+
+export const getAllmember = async (req , res)=>{
+  try {
+    const members = await User.find({role: "member"})
+    if(!members){
+      return res.status(404).json({
+        message : "No member found" ,
+        success: false
+      })
+    }
+    return res.status(200).json({
+      members ,
+      success: true
+    })
+  } catch (error) {
+    res.status(500).json({ message: "Failed", success: false });
+  }
+}
+
+
+export const removeMember = async (req, res) => {
+  try {
+    const memberId = req.params.memberId;
+    const member = await User.findById(memberId);
+
+    if (!member) {
+      return res.status(404).json({
+        message: "Member not found",
+        success: false,
+      });
+    }
+
+    // Step 1: Reject all agreements requested by this member
+    const agreements = await Agreement.find({ requestedBy: memberId });
+
+    // Step 2: Loop through agreements and update corresponding apartments
+    for (const agreement of agreements) {
+      if (agreement.apartmentFor) {
+        await Apartment.findByIdAndUpdate(agreement.apartmentFor, {
+          $set: { available: true },
+        });
+      }
+    }
+
+    // Step 3: Update agreements status to "rejected"
+    await Agreement.updateMany(
+      { requestedBy: memberId },
+      { $set: { status: "rejected" } }
+    );
+
+    // Step 4: Demote member to regular user
+    member.role = "user";
+    await member.save();
+
+    return res.status(200).json({
+      message: "Member removed",
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Failed", success: false });
   }
 };

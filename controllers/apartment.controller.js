@@ -1,4 +1,5 @@
 
+import { Agreement } from "../models/agreement.model.js";
 import { Apartment } from "../models/apartment.model.js";
 import cloudinary from "../utils/cloudinary.js";
 import { getDataUri } from "../utils/dataUri.js";
@@ -64,7 +65,7 @@ export const getAllApartments = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    console.error(error);  // error log add করো debug করার জন্য
+    console.error(error);  // 
     res.status(500).json({ message: "Failed to get apartments", success: false });
   }
 };
@@ -123,7 +124,7 @@ export const editApartment = async (req, res) => {
  if(rent){
   apartment.rent = rent
  }
- if (available !== undefined) {
+ if (available) {
   apartment.available = available;
 }
     // If image uploaded, upload to cloudinary and update url
@@ -161,7 +162,7 @@ export const deleteApartment = async (req, res) => {
         success: false,
       });
     }
-
+    await Agreement.deleteMany({apartmentFor: apartmentId})
     return res.status(200).json({
       message: "Apartment deleted successfully",
       success: true,

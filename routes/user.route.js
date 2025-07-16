@@ -1,5 +1,5 @@
 import express from "express";
-import { getDatas, login, logout, register } from "../controllers/user.controller.js";
+import { getAllmember, getDatas, login, logout, register, removeMember } from "../controllers/user.controller.js";
 import { isAuthed } from "../middlewares/isAuthed.js";
 import upload from "../middlewares/multer.js";
 import { isAdmin } from "../middlewares/role.middleware.js";
@@ -17,5 +17,8 @@ router.post("/logout", isAuthed, logout);
 
 
 router.get("/datas", isAuthed, isAdmin, getDatas);
+
+router.get("/get-all-members", isAuthed, isAdmin, getAllmember);
+router.post("/remove-member/:memberId", isAuthed, isAdmin, removeMember);
 
 export default router;
