@@ -22,6 +22,12 @@ export const createAgreement = async (req, res) => {
         success: false
       });
     }
+    if(!apartment?.available){
+return res.status(400).json({
+  message: "Apartment rented, try another one" ,
+ success: false
+})
+    }
 
     // Check if user already requested this apartment
     const existingAgreement = await Agreement.findOne({
@@ -34,6 +40,15 @@ export const createAgreement = async (req, res) => {
         message: "Already booked",
         success: false
       });
+    }
+    const alreadyAgreemented = await Agreement.findOne({
+      requestedBy: userId
+    })
+    if(alreadyAgreemented){
+      return res.status(400).json({
+        message : "Alreay applyed one. can't more" ,
+        success: false
+      })
     }
 
     const newAgreement = await Agreement.create({

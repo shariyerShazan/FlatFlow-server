@@ -70,3 +70,35 @@ export const getCouponByCode = async (req, res) => {
     }
   };
   
+
+
+  export const updateCouponAvailability = async (req, res) => {
+    try {
+      const  couponId  = req.params.couponId;
+      const { available } = req.body;
+  
+      if (typeof available !== "boolean") {
+        return res.status(400).json({ success: false, message: "Valid 'available' value (true/false) is required" });
+      }
+  
+      const updatedCoupon = await Coupon.findByIdAndUpdate(
+        couponId,
+        { available },
+        { new: true }
+      );
+  
+      if (!updatedCoupon) {
+        return res.status(404).json({ success: false, message: "Coupon not found" });
+      }
+  
+      res.status(200).json({
+        success: true,
+        message: `Coupon availability updated to ${available}`,
+        coupon: updatedCoupon,
+      });
+    } catch (error) {
+      console.error("Update Coupon Availability Error:", error.message);
+      res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+  };
+  

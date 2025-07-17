@@ -20,6 +20,10 @@ const couponSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    available: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

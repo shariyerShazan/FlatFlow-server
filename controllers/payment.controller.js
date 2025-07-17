@@ -60,9 +60,16 @@ export const createPaymentIntent = async (req, res) => {
     if (coupon) {
       foundCoupon = await Coupon.findOne({ code: coupon.toUpperCase() });
 
+
       if (foundCoupon) {
+        if(!foundCoupon?.available){
+          return res.status(400).json({
+              message : "Coupon not available" ,
+              success: false
+          } )
+        }
         const now = new Date();
-        if (foundCoupon.expiresAt > now) {
+        if ( foundCoupon.expiresAt > now  ) {
           discountPercent = foundCoupon.discountPercentage;
           const discount = (discountPercent / 100) * rent;
           finalAmount = rent - discount;
@@ -73,6 +80,7 @@ export const createPaymentIntent = async (req, res) => {
             success: false,
           });
         }
+        
       } else {
         return res.status(400).json({
           message: "Invalid coupon code",
@@ -80,6 +88,7 @@ export const createPaymentIntent = async (req, res) => {
         });
       }
     }
+    
 
     // Create Stripe Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
