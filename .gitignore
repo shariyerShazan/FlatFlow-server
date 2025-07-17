@@ -35,3 +35,4 @@ dist-ssr/
 # Optional: OS-specific
 Thumbs.db
 ehthumbs.db
+.vercel
