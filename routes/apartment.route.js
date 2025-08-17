@@ -33,6 +33,6 @@ router.delete("/apartments/:id", isAuthed, isAdmin, deleteApartment);
 // Public routes (for authenticated users)
 router.get("/apartments",  getAllApartments);
 router.get("/apartment/:id",  getApartmentById);
-router.get("/available/",  getAvailableApartment);
+router.get("/available",  getAvailableApartment);
 
 export default router;

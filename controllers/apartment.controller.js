@@ -179,23 +179,26 @@ export const deleteApartment = async (req, res) => {
 
 
 
-export const getAvailableApartment = async (req , res) => {
+export const getAvailableApartment = async (req, res) => {
   try {
-    const apartment = await  Apartment.findById({available})
-    if(!apartment){
+    const apartments = await Apartment.find({ available: true }); 
+
+    if (!apartments || apartments.length === 0) {
       return res.status(404).json({
-        message : "Apartment not found" ,
-        success: false
-      })
+        message: "No available apartments found",
+        success: false,
+      });
     }
+
     return res.status(200).json({
-      apartment ,
-      success: true
-    })
+      apartments,
+      success: true,
+    });
   } catch (error) {
     res.status(500).json({
-       message: "Failed to get apartments", 
-       success: false 
-      });
+      message: "Failed to get apartments",
+      success: false,
+      error: error.message,
+    });
   }
-}
+};
