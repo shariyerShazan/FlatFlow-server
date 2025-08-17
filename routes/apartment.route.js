@@ -7,6 +7,7 @@ import {
   editApartment,
   getAllApartments,
   getApartmentById,
+  getAvailableApartment,
 } from "../controllers/apartment.controller.js";
 import upload from "../middlewares/multer.js";
 
@@ -32,5 +33,6 @@ router.delete("/apartments/:id", isAuthed, isAdmin, deleteApartment);
 // Public routes (for authenticated users)
 router.get("/apartments",  getAllApartments);
 router.get("/apartment/:id",  getApartmentById);
+
 
 export default router;
